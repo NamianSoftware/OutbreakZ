@@ -7,8 +7,10 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Player/Components/PlayerMovementComponent.h"
 
-ASurvivalCharacter::ASurvivalCharacter()
+ASurvivalCharacter::ASurvivalCharacter(const FObjectInitializer& ObjectInitializer)
+: Super(ObjectInitializer.SetDefaultSubobjectClass<UPlayerMovementComponent>(CharacterMovementComponentName))
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bUseControllerRotationYaw = false;
@@ -19,7 +21,8 @@ ASurvivalCharacter::ASurvivalCharacter()
 
 	Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
 	Camera->SetupAttachment(SpringArm, SpringArm->SocketName);
-	
+
+	PlayerMovementComponent = Cast<UPlayerMovementComponent>(GetCharacterMovement());
 }
 
 void ASurvivalCharacter::BeginPlay()
@@ -51,6 +54,10 @@ void ASurvivalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASurvivalCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASurvivalCharacter::Look);
+
+		EnhancedInputComponent->BindAction(JogAction, ETriggerEvent::Started, this, &ASurvivalCharacter::JogStarted);
+		EnhancedInputComponent->BindAction(JogAction, ETriggerEvent::Canceled, this, &ASurvivalCharacter::JogFinished);
+		EnhancedInputComponent->BindAction(JogAction, ETriggerEvent::Completed, this, &ASurvivalCharacter::JogFinished);
 	}
 }
 
@@ -83,5 +90,19 @@ void ASurvivalCharacter::Look(const FInputActionValue& Value)
 
 	AddControllerYawInput(LookAxisVector.X);
 	AddControllerPitchInput(LookAxisVector.Y);
+}
+
+void ASurvivalCharacter::JogStarted(const FInputActionValue& Value)
+{
+	if (!Controller) return;
+
+	PlayerMovementComponent->StartJog();
+}
+
+void ASurvivalCharacter::JogFinished(const FInputActionValue& Value)
+{
+	if (!Controller) return;
+
+	PlayerMovementComponent->StopJog();
 }
 
