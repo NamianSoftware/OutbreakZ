@@ -5,6 +5,7 @@
 
 #include "Player/SurvivalCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 
 void UPlayerAnimInstance::NativeInitializeAnimation()
@@ -45,14 +46,18 @@ void UPlayerAnimInstance::SetReferences()
 
 void UPlayerAnimInstance::SetEssentialMovementData()
 {
+	PrevVelocity = Velocity;
 	Velocity = CharacterMovementRef->Velocity;
 	bIsFalling = CharacterMovementRef->IsFalling();
 	bIsCrouch = CharacterMovementRef->IsCrouching();
 	MaxSpeed = CharacterMovementRef->GetMaxSpeed();
+	ActorRotation = PlayerRef->GetActorRotation();
 
 	InputVector = CharacterMovementRef->GetLastInputVector();
 
 	GroundSpeed = bIsFalling ? 0.f : Velocity.Size2D();
+
+	UpdateLean();
 }
 
 void UPlayerAnimInstance::DetermineLocomotionState()
@@ -102,6 +107,39 @@ void UPlayerAnimInstance::TrackLocomotionStates()
 	                     &UPlayerAnimInstance::OnExitJump,
 	                     &UPlayerAnimInstance::WhileTrueJump,
 	                     &UPlayerAnimInstance::WhileFalseJump);
+}
+
+void UPlayerAnimInstance::UpdateLean()
+{
+	
+	const auto WorldDeltaSeconds = UGameplayStatics::GetWorldDeltaSeconds(GetWorld());
+
+	const auto VelocitySubtraction = UKismetMathLibrary::Subtract_VectorVector(
+		FVector(Velocity.X, Velocity.Y, 0), PrevVelocity);
+	const auto Acceleration = VelocitySubtraction / WorldDeltaSeconds;
+
+	const bool IsGainingMomentum = UKismetMathLibrary::Greater_DoubleDouble(
+		UKismetMathLibrary::DotProduct2D(FVector2D(Acceleration), FVector2D(Velocity)), 0.f);
+
+	const float MaxAcceleration = IsGainingMomentum
+									  ? CharacterMovementRef->GetMaxAcceleration()
+									  : CharacterMovementRef->GetMaxBrakingDeceleration();
+
+	const auto ClampedAcceleration = UKismetMathLibrary::Vector_ClampSizeMax(Acceleration, MaxAcceleration);
+	const auto RelativeAccelerationAmount = ActorRotation.UnrotateVector(ClampedAcceleration / MaxAcceleration);
+
+	Lean = UKismetMathLibrary::VInterpTo(
+		Lean,
+		RelativeAccelerationAmount,
+		WorldDeltaSeconds,
+		LeanInterpSpeed
+	);
+
+	const auto LeanXPower = GetCurveValue(MoveDataLeanXName);
+	const auto LeanYPower = GetCurveValue(MoveDataLeanYName);
+
+	LeanX = Lean.X * LeanXPower;
+	LeanY = Lean.Y * LeanYPower;
 }
 
 void UPlayerAnimInstance::UpdateCharacterTransform()

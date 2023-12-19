@@ -64,6 +64,8 @@ private:
 	void DetermineLocomotionState();
 	void TrackLocomotionStates();
 
+	void UpdateLean();
+	
 	void UpdateCharacterTransform();
 	void ResetTransition();
 	FRotator GetTargetRotation() const;
@@ -90,6 +92,9 @@ protected:
 	float DeltaTimeX;
 
 	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
+	FVector PrevVelocity;
+	
+	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
 	FVector Velocity;
 
 	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
@@ -100,6 +105,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
 	float MaxSpeed;
+
+	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
+	FRotator ActorRotation;
 
 	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
 	float GroundSpeed;
@@ -118,6 +126,15 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
 	float TimeInLocomotionState;
+
+	UPROPERTY(BlueprintReadOnly, Category="EssentialData|Lean")
+	float LeanX;
+	
+	UPROPERTY(BlueprintReadOnly, Category="EssentialData|Lean")
+	float LeanY;
+
+	UPROPERTY()
+	FVector Lean;
 
 	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
 	bool bPlayStartAnim;
@@ -184,6 +201,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category="Rotation")
 	float SecondaryRotationInterpSpeed = 10.f;
 
+	UPROPERTY(EditDefaultsOnly, Category="EssentialData")
+	float LeanInterpSpeed = 4.f;
+
 	UPROPERTY(EditDefaultsOnly, Category="Locomotion")
 	float MinTimeInLocomotionState = 0.15f;
 
@@ -196,20 +216,26 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category="Locomotion|Stop")
 	float JogStopSpeedLimit = 200.f;
 
-	UPROPERTY(EditDefaultsOnly, Category="Curves")
+	UPROPERTY(EditDefaultsOnly, Category="Curves|Locomotion")
 	FName MoveDataRotationName = "MoveData_Rotation";
 
-	UPROPERTY(EditDefaultsOnly, Category="Curves")
+	UPROPERTY(EditDefaultsOnly, Category="Curves|Locomotion")
 	FName MoveDataSpeedName = "MoveData_Speed";
 
-	UPROPERTY(EditDefaultsOnly, Category="Curves")
+	UPROPERTY(EditDefaultsOnly, Category="Curves|Transition")
 	FName TransitionIdleToCrouchCurveName = "TransitionData_IdleToCrouch";
 
-	UPROPERTY(EditDefaultsOnly, Category="Curves")
+	UPROPERTY(EditDefaultsOnly, Category="Curves|Transition")
 	FName TransitionWalkToCrouchCurveName = "TransitionData_WalkToCrouch";
 
-	UPROPERTY(EditDefaultsOnly, Category="Curves")
+	UPROPERTY(EditDefaultsOnly, Category="Curves|Transition")
 	FName TransitionWalkToJogCurveName = "TransitionData_WalkToJog";
+
+	UPROPERTY(EditDefaultsOnly, Category="Curves|Lean")
+	FName MoveDataLeanXName = "MoveData_LeanX";
+	
+	UPROPERTY(EditDefaultsOnly, Category="Curves|Lean")
+	FName MoveDataLeanYName = "MoveData_LeanY";
 
 #pragma region ANIMATIONS
 
