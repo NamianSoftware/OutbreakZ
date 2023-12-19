@@ -218,6 +218,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category="Curves|Locomotion")
 	FName MoveDataRotationName = "MoveData_Rotation";
+	
+	UPROPERTY(EditDefaultsOnly, Category="Curves|Locomotion")
+	FName MoveDataRotationActiveName = "MoveData_RotationActive";
 
 	UPROPERTY(EditDefaultsOnly, Category="Curves|Locomotion")
 	FName MoveDataSpeedName = "MoveData_Speed";

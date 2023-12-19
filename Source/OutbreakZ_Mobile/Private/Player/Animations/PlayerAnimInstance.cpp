@@ -20,7 +20,7 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	if (!PlayerRef) return;
 
 	DeltaTimeX = DeltaSeconds;
-	
+
 	SetEssentialMovementData();
 	DetermineLocomotionState();
 	TrackLocomotionStates();
@@ -111,7 +111,6 @@ void UPlayerAnimInstance::TrackLocomotionStates()
 
 void UPlayerAnimInstance::UpdateLean()
 {
-	
 	const auto WorldDeltaSeconds = UGameplayStatics::GetWorldDeltaSeconds(GetWorld());
 
 	const auto VelocitySubtraction = UKismetMathLibrary::Subtract_VectorVector(
@@ -122,8 +121,8 @@ void UPlayerAnimInstance::UpdateLean()
 		UKismetMathLibrary::DotProduct2D(FVector2D(Acceleration), FVector2D(Velocity)), 0.f);
 
 	const float MaxAcceleration = IsGainingMomentum
-									  ? CharacterMovementRef->GetMaxAcceleration()
-									  : CharacterMovementRef->GetMaxBrakingDeceleration();
+		                              ? CharacterMovementRef->GetMaxAcceleration()
+		                              : CharacterMovementRef->GetMaxBrakingDeceleration();
 
 	const auto ClampedAcceleration = UKismetMathLibrary::Vector_ClampSizeMax(Acceleration, MaxAcceleration);
 	const auto RelativeAccelerationAmount = ActorRotation.UnrotateVector(ClampedAcceleration / MaxAcceleration);
@@ -189,12 +188,20 @@ void UPlayerAnimInstance::MoveRotationBehavior()
 	                                                        SecondaryRotationInterpSpeed);
 
 	const auto RotationDelta = GetCurveValue(MoveDataRotationName);
+	const auto RotationActive = GetCurveValue(MoveDataRotationActiveName);
+	const auto CompleteRotationDelta = UKismetMathLibrary::FClamp(
+		UKismetMathLibrary::SafeDivide(RotationDelta, RotationActive),
+		0.f,
+		1.f);
+	
+	const auto RotationOffset = StartAngle * CompleteRotationDelta;
 
 	const FRotator NewRotation = FRotator(
 		SecondaryTargetRotation.Pitch,
-		SecondaryTargetRotation.Yaw + RotationDelta,
+		SecondaryTargetRotation.Yaw - RotationOffset,
 		SecondaryTargetRotation.Roll
 	);
+
 	PlayerRef->SetActorRotation(NewRotation);
 }
 
@@ -224,7 +231,8 @@ void UPlayerAnimInstance::UpdateStop()
 
 void UPlayerAnimInstance::ResetTargetRotations()
 {
-	PrimaryTargetRotation = SecondaryTargetRotation = PlayerRef->GetActorRotation();
+	PrimaryTargetRotation = PlayerRef->GetActorRotation();
+	SecondaryTargetRotation = PrimaryTargetRotation;
 }
 
 void UPlayerAnimInstance::UpdateLocomotionValues()
@@ -248,28 +256,30 @@ void UPlayerAnimInstance::UpdateOnJogEntry()
 {
 	UpdateEntryVariables();
 	UpdateStartAnim(JogStartAnim,
-					JogStart90LAnim, JogStart90LAnimTime,
-					JogStart180LAnim, JogStart180LAnimTime,
-					JogStart90RAnim, JogStart90RAnimTime,
-					JogStart180RAnim, JogStart180RAnimTime,
-					JogStartFAnim, JogStartFAnimTime);
+	                JogStart90LAnim, JogStart90LAnimTime,
+	                JogStart180LAnim, JogStart180LAnimTime,
+	                JogStart90RAnim, JogStart90RAnimTime,
+	                JogStart180RAnim, JogStart180RAnimTime,
+	                JogStartFAnim, JogStartFAnimTime);
 }
 
 void UPlayerAnimInstance::UpdateOnCrouchEntry()
 {
 	UpdateEntryVariables();
 	UpdateStartAnim(CrouchStartAnim,
-					CrouchStart90LAnim, CrouchStart90LAnimTime,
-					CrouchStart180LAnim, CrouchStart180LAnimTime,
-					CrouchStart90RAnim, CrouchStart90RAnimTime,
-					CrouchStart180RAnim, CrouchStart180RAnimTime,
-					CrouchStartFAnim, CrouchStartFAnimTime);
+	                CrouchStart90LAnim, CrouchStart90LAnimTime,
+	                CrouchStart180LAnim, CrouchStart180LAnimTime,
+	                CrouchStart90RAnim, CrouchStart90RAnimTime,
+	                CrouchStart180RAnim, CrouchStart180RAnimTime,
+	                CrouchStartFAnim, CrouchStartFAnimTime);
 }
 
 void UPlayerAnimInstance::UpdateEntryVariables()
 {
 	StartRotation = PlayerRef->GetActorRotation();
-	PrimaryTargetRotation = SecondaryTargetRotation = UKismetMathLibrary::MakeRotFromX(InputVector);
+
+	PrimaryTargetRotation = UKismetMathLibrary::MakeRotFromX(InputVector);
+	SecondaryTargetRotation = PrimaryTargetRotation;
 
 	StartAngle = UKismetMathLibrary::NormalizedDeltaRotator(PrimaryTargetRotation, StartRotation).Yaw;
 }
@@ -389,7 +399,7 @@ void UPlayerAnimInstance::WhileFalseIdle()
 #pragma region WALK
 void UPlayerAnimInstance::OnEntryWalk()
 {
-	if(PrevLocomotionState == ELocomotionState::ELS_Idle)
+	if (PrevLocomotionState == ELocomotionState::ELS_Idle)
 	{
 		UpdateOnWalkEntry();
 		bPlayStartAnim = true;
@@ -405,6 +415,8 @@ void UPlayerAnimInstance::OnEntryWalk()
 		{
 			bPlayGaitTransitionAnim = true;
 			UpdateWalkTransitionAnim();
+
+			ResetTargetRotations();
 		}
 	}
 }
@@ -426,7 +438,7 @@ void UPlayerAnimInstance::WhileFalseWalk()
 #pragma region JOG
 void UPlayerAnimInstance::OnEntryJog()
 {
-	if(PrevLocomotionState == ELocomotionState::ELS_Idle)
+	if (PrevLocomotionState == ELocomotionState::ELS_Idle)
 	{
 		UpdateOnJogEntry();
 		bPlayStartAnim = true;
@@ -442,6 +454,8 @@ void UPlayerAnimInstance::OnEntryJog()
 		{
 			bPlayGaitTransitionAnim = true;
 			UpdateJogTransitionAnim();
+
+			ResetTargetRotations();
 		}
 	}
 }
@@ -463,7 +477,7 @@ void UPlayerAnimInstance::WhileFalseJog()
 #pragma region CROUCH
 void UPlayerAnimInstance::OnEntryCrouch()
 {
-	if(PrevLocomotionState == ELocomotionState::ELS_Idle)
+	if (PrevLocomotionState == ELocomotionState::ELS_Idle)
 	{
 		UpdateOnCrouchEntry();
 		bPlayStartAnim = true;
