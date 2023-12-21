@@ -69,6 +69,24 @@ protected:
 	/** Called for jog input */
 	void JogStarted(const FInputActionValue& Value);
 	void JogFinished(const FInputActionValue& Value);
+
+protected:
+	UFUNCTION(BlueprintCallable)
+	void MoveForward(float AxisValue);
+	
+	UFUNCTION(BlueprintCallable)
+	void MoveRight(float AxisValue);
+
+	UFUNCTION(BlueprintCallable)
+	void LookUp(float AxisValue);
+	
+	UFUNCTION(BlueprintCallable)
+	void LookRight(float AxisValue);
+
+	float ClampAxisValue(float AxisValue) const;
+
+	UPROPERTY(EditDefaultsOnly, Category="Settings|MobileInput")
+	float MobileDeadZone = 0.2;
 #pragma endregion 
 	
 };

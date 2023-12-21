@@ -7,10 +7,11 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "BaseGizmos/GizmoElementShared.h"
 #include "Player/Components/PlayerMovementComponent.h"
 
 ASurvivalCharacter::ASurvivalCharacter(const FObjectInitializer& ObjectInitializer)
-: Super(ObjectInitializer.SetDefaultSubobjectClass<UPlayerMovementComponent>(CharacterMovementComponentName))
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UPlayerMovementComponent>(CharacterMovementComponentName))
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bUseControllerRotationYaw = false;
@@ -42,14 +43,13 @@ void ASurvivalCharacter::BeginPlay()
 void ASurvivalCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 void ASurvivalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	
+
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASurvivalCharacter::Move);
@@ -67,19 +67,8 @@ void ASurvivalCharacter::Move(const FInputActionValue& Value)
 
 	const FVector2D MovementVector = Value.Get<FVector2D>();
 
-	// find out which way is forward
-	const FRotator Rotation = Controller->GetControlRotation();
-	const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-	// get forward vector
-	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-
-	// get right vector 
-	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-	// add movement 
-	AddMovementInput(ForwardDirection, MovementVector.Y);
-	AddMovementInput(RightDirection, MovementVector.X);
+	MoveForward(MovementVector.Y);
+	MoveRight(MovementVector.X);
 }
 
 void ASurvivalCharacter::Look(const FInputActionValue& Value)
@@ -88,8 +77,8 @@ void ASurvivalCharacter::Look(const FInputActionValue& Value)
 
 	const FVector2D LookAxisVector = Value.Get<FVector2D>();
 
-	AddControllerYawInput(LookAxisVector.X);
-	AddControllerPitchInput(LookAxisVector.Y);
+	LookUp(LookAxisVector.Y);
+	LookRight(LookAxisVector.X);
 }
 
 void ASurvivalCharacter::JogStarted(const FInputActionValue& Value)
@@ -106,3 +95,44 @@ void ASurvivalCharacter::JogFinished(const FInputActionValue& Value)
 	PlayerMovementComponent->StopJog();
 }
 
+void ASurvivalCharacter::MoveForward(float AxisValue)
+{
+	const auto ClampedAxisValue = ClampAxisValue(AxisValue);
+	
+	const FRotator Rotation = Controller->GetControlRotation();
+	const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	AddMovementInput(ForwardDirection, ClampedAxisValue);
+}
+
+void ASurvivalCharacter::MoveRight(float AxisValue)
+{
+	const auto ClampedAxisValue = ClampAxisValue(AxisValue);
+	
+	const FRotator Rotation = Controller->GetControlRotation();
+	const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	AddMovementInput(RightDirection, ClampedAxisValue);
+}
+
+void ASurvivalCharacter::LookUp(float AxisValue)
+{
+	AddControllerPitchInput(AxisValue);
+}
+
+void ASurvivalCharacter::LookRight(float AxisValue)
+{
+	AddControllerYawInput(AxisValue);
+}
+
+float ASurvivalCharacter::ClampAxisValue(float AxisValue) const
+{
+	if(FMath::Abs(AxisValue) < MobileDeadZone)
+	{
+		return 0.f;
+	}
+	
+	return AxisValue > 0.f ? 1.f : -1.f;
+}
