@@ -22,7 +22,10 @@ ASurvivalCharacter::ASurvivalCharacter(const FObjectInitializer& ObjectInitializ
 
 	Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
 	Camera->SetupAttachment(SpringArm, SpringArm->SocketName);
-
+	
+	HeadItemMesh = CreateDefaultSubobject<UStaticMeshComponent>("HeadItemMesh");
+	HeadItemMesh->SetupAttachment(GetMesh(), HeadItemSocket);
+	
 	PlayerMovementComponent = Cast<UPlayerMovementComponent>(GetCharacterMovement());
 }
 

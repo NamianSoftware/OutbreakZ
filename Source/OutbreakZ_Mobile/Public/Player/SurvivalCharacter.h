@@ -39,6 +39,12 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Movement)
 	UPlayerMovementComponent* PlayerMovementComponent;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Meshes)
+	UStaticMeshComponent* HeadItemMesh;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Meshes)
+	FName HeadItemSocket = "HeadSocket";
 #pragma endregion
 
 #pragma region INPUT
