@@ -7,8 +7,9 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "BaseGizmos/GizmoElementShared.h"
+#include "Components/PhysicsSocketComponent.h"
 #include "Player/Components/PlayerMovementComponent.h"
+
 
 ASurvivalCharacter::ASurvivalCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UPlayerMovementComponent>(CharacterMovementComponentName))
@@ -22,10 +23,16 @@ ASurvivalCharacter::ASurvivalCharacter(const FObjectInitializer& ObjectInitializ
 
 	Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
 	Camera->SetupAttachment(SpringArm, SpringArm->SocketName);
-	
+
 	HeadItemMesh = CreateDefaultSubobject<UStaticMeshComponent>("HeadItemMesh");
 	HeadItemMesh->SetupAttachment(GetMesh(), HeadItemSocket);
+
+	BackpackSocket = CreateDefaultSubobject<UPhysicsSocketComponent>("BackpackSocket");
+	BackpackSocket->Attach(GetMesh(), BackpackSocketName);
 	
+	BackpackMesh = CreateDefaultSubobject<UStaticMeshComponent>("BackpackMesh");
+	BackpackMesh->SetupAttachment(BackpackSocket->SocketHinge);
+
 	PlayerMovementComponent = Cast<UPlayerMovementComponent>(GetCharacterMovement());
 }
 
@@ -101,7 +108,7 @@ void ASurvivalCharacter::JogFinished(const FInputActionValue& Value)
 void ASurvivalCharacter::MoveForward(float AxisValue)
 {
 	const auto ClampedAxisValue = ClampAxisValue(AxisValue);
-	
+
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
 
@@ -112,7 +119,7 @@ void ASurvivalCharacter::MoveForward(float AxisValue)
 void ASurvivalCharacter::MoveRight(float AxisValue)
 {
 	const auto ClampedAxisValue = ClampAxisValue(AxisValue);
-	
+
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
 
@@ -132,10 +139,10 @@ void ASurvivalCharacter::LookRight(float AxisValue)
 
 float ASurvivalCharacter::ClampAxisValue(float AxisValue) const
 {
-	if(FMath::Abs(AxisValue) < MobileDeadZone)
+	if (FMath::Abs(AxisValue) < MobileDeadZone)
 	{
 		return 0.f;
 	}
-	
+
 	return AxisValue > 0.f ? 1.f : -1.f;
 }
