@@ -191,7 +191,7 @@ protected:
 
 #pragma region SETTINGS
 
-private:
+protected:
 	UPROPERTY(EditDefaultsOnly, Category="Rotation")
 	bool bDoInputRotation = false;
 
@@ -225,14 +225,14 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category="Curves|Locomotion")
 	FName MoveDataSpeedName = "MoveData_Speed";
 
-	UPROPERTY(EditDefaultsOnly, Category="Curves|Transition")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Curves|Transition")
 	FName TransitionIdleToCrouchCurveName = "TransitionData_IdleToCrouch";
 
-	UPROPERTY(EditDefaultsOnly, Category="Curves|Transition")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Curves|Transition")
 	FName TransitionWalkToCrouchCurveName = "TransitionData_WalkToCrouch";
-
-	UPROPERTY(EditDefaultsOnly, Category="Curves|Transition")
-	FName TransitionWalkToJogCurveName = "TransitionData_WalkToJog";
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Curves|Transition")
+	FName TransitionJogToCrouchCurveName = "TransitionData_JogToCrouch";
 
 	UPROPERTY(EditDefaultsOnly, Category="Curves|Lean")
 	FName MoveDataLeanXName = "MoveData_LeanX";

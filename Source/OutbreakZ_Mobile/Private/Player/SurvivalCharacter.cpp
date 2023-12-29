@@ -130,24 +130,20 @@ void ASurvivalCharacter::CrouchFinished(const FInputActionValue& Value)
 
 void ASurvivalCharacter::MoveForward(float AxisValue)
 {
-	const auto ClampedAxisValue = ClampAxisValue(AxisValue);
-
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
 
 	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	AddMovementInput(ForwardDirection, ClampedAxisValue);
+	AddMovementInput(ForwardDirection, AxisValue);
 }
 
 void ASurvivalCharacter::MoveRight(float AxisValue)
 {
-	const auto ClampedAxisValue = ClampAxisValue(AxisValue);
-
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
 
 	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-	AddMovementInput(RightDirection, ClampedAxisValue);
+	AddMovementInput(RightDirection, AxisValue);
 }
 
 void ASurvivalCharacter::LookUp(float AxisValue)

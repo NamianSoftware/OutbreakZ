@@ -290,11 +290,11 @@ void UPlayerAnimInstance::UpdateCrouchTransitionAnim()
 	{
 	case ELocomotionState::ELS_Walk:
 		TransitionToCrouchAnim = WalkToCrouchAnim;
-		AnimStartTime = GetCurveValue(TransitionWalkToCrouchCurveName);
+		AnimStartTime = FMath::Max(GetCurveValue(TransitionWalkToCrouchCurveName), WalkToCrouchAnimStartTime);
 		break;
 	case ELocomotionState::ELS_Jog:
-		TransitionToCrouchAnim = JogToWalkAnim;
-		AnimStartTime = JogToWalkAnimStartTime;
+		TransitionToCrouchAnim = JogToCrouchAnim;
+		AnimStartTime = FMath::Max(GetCurveValue(TransitionJogToCrouchCurveName), JogToCrouchAnimStartTime);
 		break;
 	default:
 		break;
@@ -307,7 +307,7 @@ void UPlayerAnimInstance::UpdateWalkTransitionAnim()
 	{
 	case ELocomotionState::ELS_Crouch:
 		TransitionToWalkAnim = CrouchToWalkAnim;
-		AnimStartTime = GetCurveValue(TransitionWalkToCrouchCurveName);
+		AnimStartTime = FMath::Max(GetCurveValue(TransitionWalkToCrouchCurveName), CrouchToWalkAnimStartTime);
 		break;
 	case ELocomotionState::ELS_Jog:
 		TransitionToWalkAnim = JogToWalkAnim;
@@ -324,7 +324,7 @@ void UPlayerAnimInstance::UpdateJogTransitionAnim()
 	{
 	case ELocomotionState::ELS_Crouch:
 		TransitionToJogAnim = CrouchToJogAnim;
-		AnimStartTime = GetCurveValue(TransitionWalkToJogCurveName);
+		AnimStartTime = FMath::Max(GetCurveValue(TransitionJogToCrouchCurveName), CrouchToJogAnimStartTime);
 		break;
 	case ELocomotionState::ELS_Walk:
 		TransitionToJogAnim = WalkToJogAnim;
