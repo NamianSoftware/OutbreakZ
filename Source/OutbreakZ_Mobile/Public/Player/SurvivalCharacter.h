@@ -78,6 +78,10 @@ private:
 	/** Jog Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* JogAction;
+	
+	/** Jog Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* CrouchAction;
 
 protected:
 	/** Called for movement input */
@@ -89,6 +93,11 @@ protected:
 	/** Called for jog input */
 	void JogStarted(const FInputActionValue& Value);
 	void JogFinished(const FInputActionValue& Value);
+
+	/** Called for jog input */
+	void CrouchToggled(const FInputActionValue& Value);
+	void CrouchStarted(const FInputActionValue& Value);
+	void CrouchFinished(const FInputActionValue& Value);
 
 protected:
 	UFUNCTION(BlueprintCallable)
