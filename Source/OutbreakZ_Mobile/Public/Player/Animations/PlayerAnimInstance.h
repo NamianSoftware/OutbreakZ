@@ -13,7 +13,6 @@ enum class ELocomotionState : uint8
 	ELS_Idle UMETA(DisplayName = "Idle"),
 	ELS_Walk UMETA(DisplayName = "Walk"),
 	ELS_Jog UMETA(DisplayName = "Jog"),
-	ELS_Run UMETA(DisplayName = "Run"),
 	ELS_Crouch UMETA(DisplayName = "Crouch"),
 	ELS_Jump UMETA(DisplayName = "Jump"),
 };
@@ -24,7 +23,6 @@ struct OnEntryFlags
 	bool IdleFlag = true;
 	bool WalkFlag = false;
 	bool JogFlag = false;
-	bool RunFlag = false;
 	bool CrouchFlag = false;
 	bool JumpFlag = false;
 };
@@ -61,6 +59,7 @@ protected:
 
 private:
 	void SetEssentialMovementData();
+	void UpdateAimOffset();
 	void DetermineLocomotionState();
 	void TrackLocomotionStates();
 
@@ -135,6 +134,12 @@ protected:
 
 	UPROPERTY()
 	FVector Lean;
+
+	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
+	float AimPitch;
+	
+	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
+	float AimYaw;
 
 	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
 	bool bPlayStartAnim;

@@ -22,6 +22,7 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	DeltaTimeX = DeltaSeconds;
 
 	SetEssentialMovementData();
+	UpdateAimOffset();
 	DetermineLocomotionState();
 	TrackLocomotionStates();
 }
@@ -58,6 +59,13 @@ void UPlayerAnimInstance::SetEssentialMovementData()
 	GroundSpeed = bIsFalling ? 0.f : Velocity.Size2D();
 
 	UpdateLean();
+}
+
+void UPlayerAnimInstance::UpdateAimOffset()
+{
+	auto const Normalized = UKismetMathLibrary::NormalizedDeltaRotator(PlayerRef->GetBaseAimRotation(), PlayerRef->GetActorRotation());
+	AimPitch = Normalized.Pitch;
+	AimYaw = Normalized.Yaw;
 }
 
 void UPlayerAnimInstance::DetermineLocomotionState()
