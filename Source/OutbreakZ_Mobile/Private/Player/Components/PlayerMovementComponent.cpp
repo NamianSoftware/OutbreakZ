@@ -161,6 +161,19 @@ void UPlayerMovementComponent::StopCrouch()
 	bWantsToCrouch = false;
 }
 
+void UPlayerMovementComponent::ClimbToLadder()
+{
+	SetMovementMode(MOVE_Flying);
+	Velocity = FVector::Zero();
+	bIsOnLadder = true;
+}
+
+void UPlayerMovementComponent::UnclimbLadder()
+{
+	SetMovementMode(MOVE_Walking);
+	bIsOnLadder = false;
+}
+
 void UPlayerMovementComponent::ApplyMovementConfig(const FMovementStateConfig& MovementConfig)
 {
 	MaxWalkSpeed = MovementConfig.MaxWalkSpeed;

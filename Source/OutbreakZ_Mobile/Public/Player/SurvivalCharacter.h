@@ -14,6 +14,8 @@ class UInputAction;
 class UInputMappingContext;
 class UPlayerMovementComponent;
 class UPhysicsSocketComponent;
+class ULadderClimbingComponent;
+class UMotionWarpingComponent;
 
 
 UCLASS()
@@ -41,7 +43,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Movement)
 	UPlayerMovementComponent* PlayerMovementComponent;
-
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Meshes)
 	UStaticMeshComponent* HeadItemMesh;
 
@@ -83,6 +85,10 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* CrouchAction;
 
+	/** Jog Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* JumpAction;
+
 protected:
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
@@ -98,6 +104,8 @@ protected:
 	void CrouchToggled(const FInputActionValue& Value);
 	void CrouchStarted(const FInputActionValue& Value);
 	void CrouchFinished(const FInputActionValue& Value);
+
+	void JumpPressed(const FInputActionValue& Value);
 
 protected:
 	UFUNCTION(BlueprintCallable)

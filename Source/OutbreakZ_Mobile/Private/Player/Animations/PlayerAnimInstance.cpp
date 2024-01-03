@@ -7,6 +7,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Player/Components/LadderClimbingComponent.h"
+#include "Player/Components/PlayerMovementComponent.h"
 
 void UPlayerAnimInstance::NativeInitializeAnimation()
 {
@@ -22,9 +24,7 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	DeltaTimeX = DeltaSeconds;
 
 	SetEssentialMovementData();
-	UpdateAimOffset();
-	DetermineLocomotionState();
-	TrackLocomotionStates();
+	TrackMainStates();
 }
 
 void UPlayerAnimInstance::NativePostEvaluateAnimation()
@@ -41,7 +41,7 @@ void UPlayerAnimInstance::SetReferences()
 	if (const auto NewPlayerRef = Cast<ASurvivalCharacter>(TryGetPawnOwner()))
 	{
 		PlayerRef = NewPlayerRef;
-		CharacterMovementRef = PlayerRef->GetCharacterMovement();
+		CharacterMovementRef = Cast<UPlayerMovementComponent>(PlayerRef->GetCharacterMovement());
 	}
 }
 
@@ -51,6 +51,7 @@ void UPlayerAnimInstance::SetEssentialMovementData()
 	Velocity = CharacterMovementRef->Velocity;
 	bIsFalling = CharacterMovementRef->IsFalling();
 	bIsCrouch = CharacterMovementRef->IsCrouching();
+	bIsOnLadder = CharacterMovementRef->IsOnLadder();
 	MaxSpeed = CharacterMovementRef->GetMaxSpeed();
 	ActorRotation = PlayerRef->GetActorRotation();
 
@@ -59,13 +60,43 @@ void UPlayerAnimInstance::SetEssentialMovementData()
 	GroundSpeed = bIsFalling ? 0.f : Velocity.Size2D();
 
 	UpdateLean();
+	DeterminateMainState();
+}
+
+void UPlayerAnimInstance::DeterminateMainState()
+{
+	PrevMainState = MainState;
+
+	if (bIsOnLadder)
+	{
+		MainState = EMainState::EMS_OnLadder;
+		return;
+	}
+
+	if (bIsFalling)
+	{
+		MainState = EMainState::EMS_OnAir;
+		return;
+	}
+
+	MainState = EMainState::EMS_OnGround;
 }
 
 void UPlayerAnimInstance::UpdateAimOffset()
 {
-	auto const Normalized = UKismetMathLibrary::NormalizedDeltaRotator(PlayerRef->GetBaseAimRotation(), PlayerRef->GetActorRotation());
-	AimPitch = Normalized.Pitch;
-	AimYaw = Normalized.Yaw;
+	auto const Normalized = UKismetMathLibrary::NormalizedDeltaRotator(PlayerRef->GetBaseAimRotation(),
+	                                                                   PlayerRef->GetActorRotation());
+
+	if (FMath::Abs(Normalized.Yaw) > AimYawLimit)
+	{
+		AimYaw = 0.f;
+		AimPitch = 0.f;
+	}
+	else
+	{
+		AimYaw = Normalized.Yaw;
+		AimPitch = Normalized.Pitch;
+	}
 }
 
 void UPlayerAnimInstance::DetermineLocomotionState()
@@ -79,42 +110,58 @@ void UPlayerAnimInstance::DetermineLocomotionState()
 	}
 
 	TimeInLocomotionState += GetDeltaSeconds();
-	if (!UKismetMathLibrary::Greater_DoubleDouble(TimeInLocomotionState, MinTimeInLocomotionState)) return;
+	// if (!UKismetMathLibrary::Greater_DoubleDouble(TimeInLocomotionState, MinTimeInLocomotionState)) return;
 
 	DetermineGroundLocomotionState();
 }
 
 void UPlayerAnimInstance::TrackLocomotionStates()
 {
-	TrackLocomotionState(ELocomotionState::ELS_Idle, EntryFlags.IdleFlag,
+	TrackLocomotionState(ELocomotionState::ELS_Idle, EntryFlags_LocomotionState.IdleFlag,
 	                     &UPlayerAnimInstance::OnEntryIdle,
 	                     &UPlayerAnimInstance::OnExitIdle,
 	                     &UPlayerAnimInstance::WhileTrueIdle,
 	                     &UPlayerAnimInstance::WhileFalseIdle);
 
-	TrackLocomotionState(ELocomotionState::ELS_Walk, EntryFlags.WalkFlag,
+	TrackLocomotionState(ELocomotionState::ELS_Walk, EntryFlags_LocomotionState.WalkFlag,
 	                     &UPlayerAnimInstance::OnEntryWalk,
 	                     &UPlayerAnimInstance::OnExitWalk,
 	                     &UPlayerAnimInstance::WhileTrueWalk,
 	                     &UPlayerAnimInstance::WhileFalseWalk);
 
-	TrackLocomotionState(ELocomotionState::ELS_Jog, EntryFlags.JogFlag,
+	TrackLocomotionState(ELocomotionState::ELS_Jog, EntryFlags_LocomotionState.JogFlag,
 	                     &UPlayerAnimInstance::OnEntryJog,
 	                     &UPlayerAnimInstance::OnExitJog,
 	                     &UPlayerAnimInstance::WhileTrueJog,
 	                     &UPlayerAnimInstance::WhileFalseJog);
 
-	TrackLocomotionState(ELocomotionState::ELS_Crouch, EntryFlags.CrouchFlag,
+	TrackLocomotionState(ELocomotionState::ELS_Crouch, EntryFlags_LocomotionState.CrouchFlag,
 	                     &UPlayerAnimInstance::OnEntryCrouch,
 	                     &UPlayerAnimInstance::OnExitCrouch,
 	                     &UPlayerAnimInstance::WhileTrueCrouch,
 	                     &UPlayerAnimInstance::WhileFalseCrouch);
 
-	TrackLocomotionState(ELocomotionState::ELS_Jump, EntryFlags.JumpFlag,
+	TrackLocomotionState(ELocomotionState::ELS_Jump, EntryFlags_LocomotionState.JumpFlag,
 	                     &UPlayerAnimInstance::OnEntryJump,
 	                     &UPlayerAnimInstance::OnExitJump,
 	                     &UPlayerAnimInstance::WhileTrueJump,
 	                     &UPlayerAnimInstance::WhileFalseJump);
+}
+
+void UPlayerAnimInstance::TrackMainStates()
+{
+	TrackMainState(EMainState::EMS_OnGround, EntryFlags_MainState.IsOnGround,
+	               &UPlayerAnimInstance::OnEntryGroundState,
+	               &UPlayerAnimInstance::OnExitGroundState,
+	               &UPlayerAnimInstance::WhileTrueGroundState,
+	               &UPlayerAnimInstance::WhileFalseGroundState);
+
+
+	TrackMainState(EMainState::EMS_OnLadder, EntryFlags_MainState.IsOnLadder,
+	               &UPlayerAnimInstance::OnEntryLadderState,
+	               &UPlayerAnimInstance::OnExitLadderState,
+	               &UPlayerAnimInstance::WhileTrueLadderState,
+	               &UPlayerAnimInstance::WhileFalseLadderState);
 }
 
 void UPlayerAnimInstance::UpdateLean()
@@ -201,7 +248,7 @@ void UPlayerAnimInstance::MoveRotationBehavior()
 		UKismetMathLibrary::SafeDivide(RotationDelta, RotationActive),
 		0.f,
 		1.f);
-	
+
 	const auto RotationOffset = StartAngle * CompleteRotationDelta;
 
 	const FRotator NewRotation = FRotator(
@@ -535,6 +582,68 @@ void UPlayerAnimInstance::WhileTrueJump()
 void UPlayerAnimInstance::WhileFalseJump()
 {
 }
+
+
+#pragma region MAIN_STATE_CALLBACKS
+#pragma region ON_GROUND
+void UPlayerAnimInstance::OnEntryGroundState()
+{
+}
+
+void UPlayerAnimInstance::OnExitGroundState()
+{
+}
+
+void UPlayerAnimInstance::WhileTrueGroundState()
+{
+	UpdateAimOffset();
+	DetermineLocomotionState();
+	TrackLocomotionStates();
+}
+
+void UPlayerAnimInstance::WhileFalseGroundState()
+{
+}
+#pragma endregion
+
+#pragma region ON_GROUND
+void UPlayerAnimInstance::OnEntryLadderState()
+{
+	UpdateEnterSideLadder();
+}
+
+void UPlayerAnimInstance::OnExitLadderState()
+{
+}
+
+void UPlayerAnimInstance::WhileTrueLadderState()
+{
+	UpdateAimOffset();
+}
+
+void UPlayerAnimInstance::WhileFalseLadderState()
+{
+}
+#pragma endregion
+#pragma endregion
+
+
+void UPlayerAnimInstance::UpdateEnterSideLadder()
+{
+	// switch (PlayerRef->GetLadderClimbingComponent()->GetLadderEnterSide())
+	// {
+	// case ELadderEnterSide::ELES_FromTop:
+	// 	EnterLadderAnim = LadderEnterTopAnim;
+	// 	AnimStartTime = LadderEnterTopStartTime;
+	// 	break;
+	//
+	// case ELadderEnterSide::ELES_FromBottom:
+	// 	EnterLadderAnim = LadderEnterBottomAnim;
+	// 	AnimStartTime = LadderEnterBottomStartTime;
+	// 	break;
+	// }
+}
+
 #pragma endregion
 #pragma endregion
 
@@ -559,6 +668,38 @@ void UPlayerAnimInstance::TrackLocomotionState(ELocomotionState TracedState, boo
 			EnterFlag = true;
 			(this->*OnEnterCallback)();
 			TimeInLocomotionState = 0.f;
+		}
+		else
+		{
+			(this->*WhileTrueCallback)();
+		}
+	}
+	else
+	{
+		if (EnterFlag != false)
+		{
+			EnterFlag = false;
+			(this->*OnExitCallback)();
+		}
+		else
+		{
+			(this->*WhileFalseCallback)();
+		}
+	}
+}
+
+void UPlayerAnimInstance::TrackMainState(EMainState TracedState, bool& EnterFlag,
+                                         void (UPlayerAnimInstance::*OnEnterCallback)(),
+                                         void (UPlayerAnimInstance::*OnExitCallback)(),
+                                         void (UPlayerAnimInstance::*WhileTrueCallback)(),
+                                         void (UPlayerAnimInstance::*WhileFalseCallback)())
+{
+	if (MainState == TracedState)
+	{
+		if (EnterFlag != true)
+		{
+			EnterFlag = true;
+			(this->*OnEnterCallback)();
 		}
 		else
 		{

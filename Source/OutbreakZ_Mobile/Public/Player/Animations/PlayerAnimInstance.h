@@ -18,13 +18,32 @@ enum class ELocomotionState : uint8
 };
 
 
-struct OnEntryFlags
+UENUM(BlueprintType)
+enum class EMainState : uint8
+{
+	EMS_OnGround UMETA(DisplayName = "OnGround"),
+	EMS_OnLadder UMETA(DisplayName = "OnLadder"),
+	EMS_OnAir UMETA(DisplayName = "OnAir"),
+	EMS_OnVehicle UMETA(DisplayName = "OnVehicle"),
+};
+
+
+struct OnEntryFlags_LocomotionState
 {
 	bool IdleFlag = true;
 	bool WalkFlag = false;
 	bool JogFlag = false;
 	bool CrouchFlag = false;
 	bool JumpFlag = false;
+};
+
+
+struct OnEntryFlags_MainState
+{
+	bool IsOnGround = true;
+	bool IsOnLadder = false;
+	bool IsOnAir = false;
+	bool IsOnVehicle = false;
 };
 
 
@@ -52,16 +71,19 @@ protected:
 	class ASurvivalCharacter* PlayerRef;
 
 	UPROPERTY(BlueprintReadOnly, Category="References")
-	class UCharacterMovementComponent* CharacterMovementRef;
+	class UPlayerMovementComponent* CharacterMovementRef;
 #pragma endregion
 
 #pragma region ESSENTIAL_DATA
 
 private:
 	void SetEssentialMovementData();
+	void DeterminateMainState();
 	void UpdateAimOffset();
 	void DetermineLocomotionState();
 	void TrackLocomotionStates();
+	
+	void TrackMainStates();
 
 	void UpdateLean();
 	
@@ -101,6 +123,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
 	bool bIsCrouch;
+	
+	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
+	bool bIsOnLadder;
 
 	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
 	float MaxSpeed;
@@ -120,6 +145,13 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
 	ELocomotionState LocomotionState;
 
+
+	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
+	EMainState PrevMainState;
+	
+	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
+	EMainState MainState;
+
 	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
 	ELocomotionState PostStopLocomotionState;
 
@@ -135,10 +167,10 @@ protected:
 	UPROPERTY()
 	FVector Lean;
 
-	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
+	UPROPERTY(BlueprintReadOnly, Category="AimOffset")
 	float AimPitch;
 	
-	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
+	UPROPERTY(BlueprintReadOnly, Category="AimOffset")
 	float AimYaw;
 
 	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
@@ -205,6 +237,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="Rotation")
 	float SecondaryRotationInterpSpeed = 10.f;
+
+	UPROPERTY(EditDefaultsOnly, Category="Rotation")
+	float AimYawLimit = 130.f;
 
 	UPROPERTY(EditDefaultsOnly, Category="EssentialData")
 	float LeanInterpSpeed = 4.f;
@@ -440,7 +475,7 @@ protected:
 #pragma region LOCOMOTION_STATE_CALLBACKS
 
 private:
-	OnEntryFlags EntryFlags;
+	OnEntryFlags_LocomotionState EntryFlags_LocomotionState;
 
 #pragma region IDLE
 	void OnEntryIdle();
@@ -478,6 +513,52 @@ private:
 #pragma endregion
 #pragma endregion
 
+#pragma region MAIN_STATE_CALLBACKS
+private:
+	OnEntryFlags_MainState EntryFlags_MainState;
+	
+#pragma region ON_GROUND
+	void OnEntryGroundState();
+	void OnExitGroundState();
+	void WhileTrueGroundState();
+	void WhileFalseGroundState();
+#pragma endregion
+
+#pragma region ON_LADDER
+	void OnEntryLadderState();
+	void OnExitLadderState();
+	void WhileTrueLadderState();
+	void WhileFalseLadderState();
+#pragma endregion
+	
+#pragma endregion 
+	
+#pragma region ON_LADDER
+public:
+	void UpdateEnterSideLadder();
+
+protected:
+	UPROPERTY(BlueprintReadOnly, Category="Ladder|AnimationData")
+	UAnimSequence* EnterLadderAnim;
+	
+	UPROPERTY(BlueprintReadOnly, Category="Ladder|AnimationData")
+	UAnimSequence* ExitLadderAnim;
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category="Ladder|Animations|Enter")
+	UAnimSequence* LadderEnterTopAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Ladder|Animations|Enter")
+	float LadderEnterTopStartTime;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Ladder|Animations|Enter")
+	UAnimSequence* LadderEnterBottomAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Ladder|Animations|Enter")
+	float LadderEnterBottomStartTime;
+#pragma endregion 
+	
+	
 #pragma region HELPERS
 
 private:
@@ -490,6 +571,13 @@ private:
 	                                      void (UPlayerAnimInstance::*OnExitCallback)(),
 	                                      void (UPlayerAnimInstance::*WhileTrueCallback)(),
 	                                      void (UPlayerAnimInstance::*WhileFalseCallback)());
+
+	FORCEINLINE void TrackMainState(EMainState TracedState,
+										  bool& EnterFlag,
+										  void (UPlayerAnimInstance::*OnEnterCallback)(),
+										  void (UPlayerAnimInstance::*OnExitCallback)(),
+										  void (UPlayerAnimInstance::*WhileTrueCallback)(),
+										  void (UPlayerAnimInstance::*WhileFalseCallback)());
 
 	FORCEINLINE void UpdateStartAnim(UAnimSequence*& FinishAnim,
 	                                 UAnimSequence* Start90LAnim, float Start90LAnimTime,

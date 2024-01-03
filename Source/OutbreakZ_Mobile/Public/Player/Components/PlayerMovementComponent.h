@@ -88,7 +88,17 @@ public:
 	UFUNCTION(BlueprintCallable) void ToggleCrouch();
 	UFUNCTION(BlueprintCallable) void StartCrouch();
 	UFUNCTION(BlueprintCallable) void StopCrouch();
+	
+	UFUNCTION(BlueprintCallable) void ClimbToLadder();
+	UFUNCTION(BlueprintCallable) void UnclimbLadder();
 
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE bool IsOnLadder() const { return bIsOnLadder; }
+	
+private:	
+	UPROPERTY()
+	bool bIsOnLadder = false;
+	
 private:
 	void ApplyMovementConfig(const FMovementStateConfig& MovementConfig);
 };

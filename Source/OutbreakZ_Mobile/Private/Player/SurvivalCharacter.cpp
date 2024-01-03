@@ -70,6 +70,7 @@ void ASurvivalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		EnhancedInputComponent->BindAction(JogAction, ETriggerEvent::Completed, this, &ASurvivalCharacter::JogFinished);
 
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &ASurvivalCharacter::CrouchToggled);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ASurvivalCharacter::JumpPressed);
 	}
 }
 
@@ -126,6 +127,17 @@ void ASurvivalCharacter::CrouchFinished(const FInputActionValue& Value)
 	if (!Controller) return;
 
 	PlayerMovementComponent->StopCrouch();
+}
+
+void ASurvivalCharacter::JumpPressed(const FInputActionValue& Value)
+{
+	if(PlayerMovementComponent->IsCrouching())
+	{
+		PlayerMovementComponent->StopCrouch();
+		return;
+	}
+
+	// Jump();
 }
 
 void ASurvivalCharacter::MoveForward(float AxisValue)
