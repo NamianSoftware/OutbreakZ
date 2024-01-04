@@ -58,8 +58,7 @@ void UPlayerAnimInstance::SetEssentialMovementData()
 	InputVector = CharacterMovementRef->GetLastInputVector();
 
 	GroundSpeed = bIsFalling ? 0.f : Velocity.Size2D();
-
-	UpdateLean();
+	
 	DeterminateMainState();
 }
 
@@ -196,9 +195,15 @@ void UPlayerAnimInstance::UpdateLean()
 	LeanY = Lean.Y * LeanYPower;
 }
 
+void UPlayerAnimInstance::ResetLean()
+{
+	LeanX = 0.f;
+	LeanY = 0.f;
+}
+
 void UPlayerAnimInstance::UpdateCharacterTransform()
 {
-	if (InLocomotionState())
+	if (InLocomotionState() && MainState == EMainState::EMS_OnGround)
 	{
 		MoveRotationBehavior();
 	}
@@ -588,14 +593,17 @@ void UPlayerAnimInstance::WhileFalseJump()
 #pragma region ON_GROUND
 void UPlayerAnimInstance::OnEntryGroundState()
 {
+	ResetLean();
 }
 
 void UPlayerAnimInstance::OnExitGroundState()
 {
+	ResetLean();
 }
 
 void UPlayerAnimInstance::WhileTrueGroundState()
 {
+	UpdateLean();
 	UpdateAimOffset();
 	DetermineLocomotionState();
 	TrackLocomotionStates();

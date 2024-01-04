@@ -86,6 +86,7 @@ private:
 	void TrackMainStates();
 
 	void UpdateLean();
+	void ResetLean();
 	
 	void UpdateCharacterTransform();
 	void ResetTransition();

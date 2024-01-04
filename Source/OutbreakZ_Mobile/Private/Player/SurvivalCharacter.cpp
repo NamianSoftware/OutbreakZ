@@ -8,6 +8,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Components/PhysicsSocketComponent.h"
+#include "Player/Components/MantlingSystemComponent.h"
 #include "Player/Components/PlayerMovementComponent.h"
 
 
@@ -34,6 +35,8 @@ ASurvivalCharacter::ASurvivalCharacter(const FObjectInitializer& ObjectInitializ
 	BackpackMesh->SetupAttachment(BackpackSocket->SocketHinge);
 
 	PlayerMovementComponent = Cast<UPlayerMovementComponent>(GetCharacterMovement());
+	
+	MantleComponent = CreateDefaultSubobject<UMantlingSystemComponent>("MantleComponent");
 }
 
 void ASurvivalCharacter::BeginPlay()
@@ -48,6 +51,13 @@ void ASurvivalCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+}
+
+void ASurvivalCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	
+	// MantleComponent->OnMantleStateUpdate.AddUniqueDynamic(this, &ASurvivalCharacter::OnMantleStateUpdate);
 }
 
 void ASurvivalCharacter::Tick(float DeltaTime)
@@ -137,7 +147,7 @@ void ASurvivalCharacter::JumpPressed(const FInputActionValue& Value)
 		return;
 	}
 
-	// Jump();
+	Jump();
 }
 
 void ASurvivalCharacter::MoveForward(float AxisValue)

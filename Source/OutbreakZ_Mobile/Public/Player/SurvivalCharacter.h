@@ -15,6 +15,7 @@ class UInputMappingContext;
 class UPlayerMovementComponent;
 class UPhysicsSocketComponent;
 class ULadderClimbingComponent;
+class UMantlingSystemComponent;
 class UMotionWarpingComponent;
 
 
@@ -28,6 +29,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void PostInitializeComponents() override;
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -53,6 +55,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Meshes)
 	UStaticMeshComponent* BackpackMesh;
 #pragma endregion
+	
+	UPROPERTY(EditDefaultsOnly, Category="Components|Mantle")
+	UMantlingSystemComponent* MantleComponent;
 
 #pragma region PHYSICS_SOCKET
 	UPROPERTY(EditDefaultsOnly, Category=PhysicsSockets)
