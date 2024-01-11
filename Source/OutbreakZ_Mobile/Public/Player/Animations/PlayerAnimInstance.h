@@ -13,8 +13,7 @@ enum class ELocomotionState : uint8
 	ELS_Idle UMETA(DisplayName = "Idle"),
 	ELS_Walk UMETA(DisplayName = "Walk"),
 	ELS_Jog UMETA(DisplayName = "Jog"),
-	ELS_Crouch UMETA(DisplayName = "Crouch"),
-	ELS_Jump UMETA(DisplayName = "Jump"),
+	ELS_Crouch UMETA(DisplayName = "Crouch")
 };
 
 
@@ -34,7 +33,6 @@ struct OnEntryFlags_LocomotionState
 	bool WalkFlag = false;
 	bool JogFlag = false;
 	bool CrouchFlag = false;
-	bool JumpFlag = false;
 };
 
 
@@ -60,6 +58,9 @@ public:
 protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	bool InLocomotionState();
+	
+	UFUNCTION(BlueprintImplementableEvent)
+	bool InLandState();
 
 #pragma region REFERENCES
 
@@ -109,6 +110,12 @@ private:
 
 	void DetermineGroundLocomotionState();
 
+	void UpdateJumpAnims();
+	void UpdateLandAnim();
+	
+	UFUNCTION(BlueprintPure)
+	bool IsForwardRightFoot() const;
+
 protected:
 	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
 	float DeltaTimeX;
@@ -146,6 +153,8 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
 	ELocomotionState LocomotionState;
 
+	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
+	ELocomotionState LandLocomotionState;
 
 	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
 	EMainState PrevMainState;
@@ -182,6 +191,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category="Stride")
 	float PlayRate;
+	
+	UPROPERTY(BlueprintReadOnly, Category="Stride")
+	bool bJumpFootIsRight;
 
 #pragma region ROTATION
 	UPROPERTY(BlueprintReadOnly, Category="Rotation")
@@ -202,7 +214,7 @@ protected:
 protected:
 	UPROPERTY(BlueprintReadOnly, Category="AnimationData")
 	UAnimSequence* StopAnim;
-
+	
 	UPROPERTY(BlueprintReadOnly, Category="AnimationData")
 	UAnimSequence* CrouchStartAnim;
 
@@ -220,6 +232,18 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category="AnimationData")
 	UAnimSequence* TransitionToJogAnim;
+	
+	UPROPERTY(BlueprintReadOnly, Category="AnimationData")
+	UAnimSequence* StartJumpAnim;
+	
+	UPROPERTY(BlueprintReadOnly, Category="AnimationData")
+	UAnimSequence* FallingAnim;
+	
+	UPROPERTY(BlueprintReadOnly, Category="AnimationData")
+	UAnimSequence* LandAnim;
+	
+	UPROPERTY(BlueprintReadOnly, Category="AnimationData")
+	UAnimSequence* InAirAnim;
 
 	UPROPERTY(BlueprintReadOnly, Category="AnimationData")
 	float AnimStartTime;
@@ -281,6 +305,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Curves|Lean")
 	FName MoveDataLeanYName = "MoveData_LeanY";
 
+	UPROPERTY(EditDefaultsOnly, Category="Bones")
+	FName RootBoneName = "Root";
+	
+	UPROPERTY(EditDefaultsOnly, Category="Bones")
+	FName RFootBoneName = "Foot_R";
+	
+	
 #pragma region ANIMATIONS
 
 #pragma region CROUCH_START
@@ -437,6 +468,84 @@ protected:
 	float WalkToJogAnimStartTime = 0.f;
 #pragma endregion
 
+
+#pragma region TRANSITION
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Start")
+	UAnimSequence* IdleStartJumpAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Start")
+	float IdleStartJumpStartTime = 0.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Start")
+	UAnimSequence* WalkStartJumpRAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Start")
+	float WalkStartJumpRStartTime = 0.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Start")
+	UAnimSequence* WalkStartJumpLAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Start")
+	float WalkStartJumpLStartTime = 0.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Start")
+	UAnimSequence* JogStartJumpRAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Start")
+	float JogStartJumpRStartTime = 0.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Start")
+	UAnimSequence* JogStartJumpLAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Start")
+	float JogStartJumpLStartTime = 0.f;
+
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Falling")
+	UAnimSequence* IdleFallingAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Falling")
+	UAnimSequence* WalkRFallingAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Falling")
+	UAnimSequence* WalkLFallingAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Falling")
+	UAnimSequence* JogRFallingAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Falling")
+	UAnimSequence* JogLFallingAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Land")
+	UAnimSequence* IdleLandAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Land")
+	float IdleLandLStartTime = 0.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Land")
+	UAnimSequence* WalkRLandAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Land")
+	float WalkRLandStartTime = 0.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Land")
+	UAnimSequence* WalkLLandAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Land")
+	float WalkLLandStartTime = 0.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Land")
+	UAnimSequence* JogRLandAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Land")
+	float JogRLandStartTime = 0.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Land")
+	UAnimSequence* JogLLandAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Land")
+	float JogLLandStartTime = 0.f;
+#pragma endregion 
+	
 #pragma endregion
 
 #pragma region CROUCH
@@ -505,13 +614,6 @@ private:
 	void WhileTrueCrouch();
 	void WhileFalseCrouch();
 #pragma endregion
-
-#pragma region JUMP
-	void OnEntryJump();
-	void OnExitJump();
-	void WhileTrueJump();
-	void WhileFalseJump();
-#pragma endregion
 #pragma endregion
 
 #pragma region MAIN_STATE_CALLBACKS
@@ -530,6 +632,13 @@ private:
 	void OnExitLadderState();
 	void WhileTrueLadderState();
 	void WhileFalseLadderState();
+#pragma endregion
+
+#pragma region ON_AIR
+	void OnEntryAirState();
+	void OnExitAirState();
+	void WhileTrueAirState();
+	void WhileFalseAirState();
 #pragma endregion
 	
 #pragma endregion 

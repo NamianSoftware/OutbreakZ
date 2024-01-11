@@ -58,7 +58,7 @@ void UPlayerAnimInstance::SetEssentialMovementData()
 	InputVector = CharacterMovementRef->GetLastInputVector();
 
 	GroundSpeed = bIsFalling ? 0.f : Velocity.Size2D();
-	
+
 	DeterminateMainState();
 }
 
@@ -104,7 +104,6 @@ void UPlayerAnimInstance::DetermineLocomotionState()
 
 	if (bIsFalling)
 	{
-		LocomotionState = ELocomotionState::ELS_Jump;
 		return;
 	}
 
@@ -139,12 +138,6 @@ void UPlayerAnimInstance::TrackLocomotionStates()
 	                     &UPlayerAnimInstance::OnExitCrouch,
 	                     &UPlayerAnimInstance::WhileTrueCrouch,
 	                     &UPlayerAnimInstance::WhileFalseCrouch);
-
-	TrackLocomotionState(ELocomotionState::ELS_Jump, EntryFlags_LocomotionState.JumpFlag,
-	                     &UPlayerAnimInstance::OnEntryJump,
-	                     &UPlayerAnimInstance::OnExitJump,
-	                     &UPlayerAnimInstance::WhileTrueJump,
-	                     &UPlayerAnimInstance::WhileFalseJump);
 }
 
 void UPlayerAnimInstance::TrackMainStates()
@@ -161,6 +154,13 @@ void UPlayerAnimInstance::TrackMainStates()
 	               &UPlayerAnimInstance::OnExitLadderState,
 	               &UPlayerAnimInstance::WhileTrueLadderState,
 	               &UPlayerAnimInstance::WhileFalseLadderState);
+
+
+	TrackMainState(EMainState::EMS_OnAir, EntryFlags_MainState.IsOnAir,
+	               &UPlayerAnimInstance::OnEntryAirState,
+	               &UPlayerAnimInstance::OnExitAirState,
+	               &UPlayerAnimInstance::WhileTrueAirState,
+	               &UPlayerAnimInstance::WhileFalseAirState);
 }
 
 void UPlayerAnimInstance::UpdateLean()
@@ -203,7 +203,8 @@ void UPlayerAnimInstance::ResetLean()
 
 void UPlayerAnimInstance::UpdateCharacterTransform()
 {
-	if (InLocomotionState() && MainState == EMainState::EMS_OnGround)
+	if ((InLocomotionState() || InLandState())
+		&& MainState == EMainState::EMS_OnGround)
 	{
 		MoveRotationBehavior();
 	}
@@ -303,6 +304,7 @@ void UPlayerAnimInstance::UpdateLocomotionValues()
 
 void UPlayerAnimInstance::UpdateOnWalkEntry()
 {
+	UpdateEntryVariables();
 	UpdateEntryVariables();
 	UpdateStartAnim(WalkStartAnim,
 	                WalkStart90LAnim, WalkStart90LAnimTime,
@@ -433,6 +435,106 @@ void UPlayerAnimInstance::DetermineGroundLocomotionState()
 	}
 
 	LocomotionState = ELocomotionState::ELS_Idle;
+}
+
+void UPlayerAnimInstance::UpdateJumpAnims()
+{
+	bJumpFootIsRight = IsForwardRightFoot();
+
+	switch (LocomotionState)
+	{
+	case ELocomotionState::ELS_Idle:
+		StartJumpAnim = IdleStartJumpAnim;
+		AnimStartTime = IdleStartJumpStartTime;
+		FallingAnim = IdleFallingAnim;
+		break;
+	case ELocomotionState::ELS_Walk:
+		if (bJumpFootIsRight)
+		{
+			StartJumpAnim = WalkStartJumpRAnim;
+			AnimStartTime = WalkStartJumpRStartTime;
+			FallingAnim = WalkRFallingAnim;
+		}
+		else
+		{
+			StartJumpAnim = WalkStartJumpLAnim;
+			AnimStartTime = WalkStartJumpLStartTime;
+			FallingAnim = WalkLFallingAnim;
+		}
+		break;
+	case ELocomotionState::ELS_Jog:
+		if (bJumpFootIsRight)
+		{
+			StartJumpAnim = JogStartJumpRAnim;
+			AnimStartTime = JogStartJumpRStartTime;
+			FallingAnim = JogRFallingAnim;
+		}
+		else
+		{
+			StartJumpAnim = JogStartJumpLAnim;
+			AnimStartTime = JogStartJumpLStartTime;
+			FallingAnim = JogLFallingAnim;
+		}
+		break;
+	default: break;
+	}
+}
+
+void UPlayerAnimInstance::UpdateLandAnim()
+{
+	DetermineLocomotionState();
+	LandLocomotionState = LocomotionState;
+
+	switch (LandLocomotionState)
+	{
+	case ELocomotionState::ELS_Idle:
+		LandAnim = IdleLandAnim;
+		AnimStartTime = IdleLandLStartTime;
+		break;
+	case ELocomotionState::ELS_Walk:
+		if (bJumpFootIsRight)
+		{
+			LandAnim = WalkRLandAnim;
+			AnimStartTime = WalkRLandStartTime;
+		}
+		else
+		{
+			LandAnim = WalkLLandAnim;
+			AnimStartTime = WalkLLandStartTime;
+		}
+		break;
+	case ELocomotionState::ELS_Jog:
+		if (bJumpFootIsRight)
+		{
+			LandAnim = JogRLandAnim;
+			AnimStartTime = JogRLandStartTime;
+		}
+		else
+		{
+			LandAnim = JogLLandAnim;
+			AnimStartTime = JogLLandStartTime;
+		}
+		break;
+	default: break;
+	}
+}
+
+bool UPlayerAnimInstance::IsForwardRightFoot() const
+{
+	if (!PlayerRef) return false;
+
+	const auto RootBoneLocation = GetOwningComponent()->GetSocketLocation(RootBoneName);
+	const auto RFootBoneLocation = GetOwningComponent()->GetSocketLocation(RFootBoneName);
+
+	const auto RootRFootRotation = UKismetMathLibrary::FindLookAtRotation(RootBoneLocation, RFootBoneLocation);
+	const auto RootRFootForwardVector = UKismetMathLibrary::GetForwardVector(RootRFootRotation);
+
+	const auto ControlForward = UKismetMathLibrary::GetForwardVector(PlayerRef->GetControlRotation());
+
+	const auto ControlVelocityRotation = UKismetMathLibrary::FindLookAtRotation(ControlForward, Velocity);
+	const auto ControlVelocityForwardVector = UKismetMathLibrary::GetForwardVector(ControlVelocityRotation);
+
+	return UKismetMathLibrary::Dot_VectorVector(RootRFootForwardVector, ControlVelocityForwardVector) > 0.f;
 }
 
 #pragma region LOCOMOTION_STATE_CALLBACKS
@@ -571,24 +673,6 @@ void UPlayerAnimInstance::WhileFalseCrouch()
 }
 #pragma endregion
 
-#pragma region JUMP
-void UPlayerAnimInstance::OnEntryJump()
-{
-}
-
-void UPlayerAnimInstance::OnExitJump()
-{
-}
-
-void UPlayerAnimInstance::WhileTrueJump()
-{
-}
-
-void UPlayerAnimInstance::WhileFalseJump()
-{
-}
-
-
 #pragma region MAIN_STATE_CALLBACKS
 #pragma region ON_GROUND
 void UPlayerAnimInstance::OnEntryGroundState()
@@ -614,7 +698,7 @@ void UPlayerAnimInstance::WhileFalseGroundState()
 }
 #pragma endregion
 
-#pragma region ON_GROUND
+#pragma region ON_LADDER
 void UPlayerAnimInstance::OnEntryLadderState()
 {
 	UpdateEnterSideLadder();
@@ -630,6 +714,27 @@ void UPlayerAnimInstance::WhileTrueLadderState()
 }
 
 void UPlayerAnimInstance::WhileFalseLadderState()
+{
+}
+#pragma endregion
+
+#pragma region ON_AIR
+void UPlayerAnimInstance::OnEntryAirState()
+{
+	UpdateJumpAnims();
+}
+
+void UPlayerAnimInstance::OnExitAirState()
+{
+	UpdateLandAnim();
+}
+
+void UPlayerAnimInstance::WhileTrueAirState()
+{
+	UpdateAimOffset();
+}
+
+void UPlayerAnimInstance::WhileFalseAirState()
 {
 }
 #pragma endregion
