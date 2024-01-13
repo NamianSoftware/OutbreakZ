@@ -67,6 +67,8 @@ class OUTBREAKZ_MOBILE_API UPlayerMovementComponent : public UCharacterMovementC
 
 	UPROPERTY(EditDefaultsOnly, Category=MovementConfig) FMovementStateConfig WalkConfig;
 	UPROPERTY(EditDefaultsOnly, Category=MovementConfig) FMovementStateConfig JogConfig;
+	UPROPERTY(EditDefaultsOnly, Category=MovementConfig) float JumpDelayTime = 0.25;
+	UPROPERTY(EditDefaultsOnly, Category=MovementConfig) float JogDelayTime = 0.25;
 
 	UPROPERTY() EAppliedMovementState AppliedMovementState = EAppliedMovementState::EAMS_None;
 
@@ -78,7 +80,10 @@ public:
 protected:
 	virtual void UpdateFromCompressedFlags(uint8 Flags) override;
 	virtual void OnMovementUpdated(float DeltaSeconds, const FVector& OldLocation, const FVector& OldVelocity) override;
+	virtual void ProcessLanded(const FHitResult& Hit, float remainingTime, int32 Iterations) override;
 
+	virtual bool DoJump(bool bReplayingMoves) override;
+	
 public:
 	UFUNCTION(BlueprintCallable) void StartJog();
 	UFUNCTION(BlueprintCallable) void StopJog();
@@ -92,6 +97,10 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE bool IsOnLadder() const { return bIsOnLadder; }
+
+private:
+	double LastJumpTime = 0.f;
+	double LastStopJogTime = 0.f;
 	
 private:	
 	UPROPERTY()

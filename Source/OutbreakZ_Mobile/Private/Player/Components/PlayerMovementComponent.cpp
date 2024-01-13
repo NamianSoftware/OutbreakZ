@@ -131,19 +131,41 @@ void UPlayerMovementComponent::OnMovementUpdated(float DeltaSeconds, const FVect
 	}
 }
 
+void UPlayerMovementComponent::ProcessLanded(const FHitResult& Hit, float remainingTime, int32 Iterations)
+{
+	Super::ProcessLanded(Hit, remainingTime, Iterations);
+	
+	LastJumpTime = GetWorld()->GetTimeSeconds();
+}
+
+bool UPlayerMovementComponent::DoJump(bool bReplayingMoves)
+{
+	if(GetWorld()->TimeSince(LastJumpTime) < JumpDelayTime) { return false; }
+	
+	return Super::DoJump(bReplayingMoves);
+}
+
 void UPlayerMovementComponent::StartJog()
 {
 	if (IsCrouching())
 	{
 		StopCrouch();
 	}
+
+	if(Safe_bWantsToJog) return;
+
+	if(GetWorld()->TimeSince(LastStopJogTime) < JumpDelayTime) return ; 
 	
 	Safe_bWantsToJog = true;
 }
 
 void UPlayerMovementComponent::StopJog()
 {
+	if(!Safe_bWantsToJog) return;
+	
 	Safe_bWantsToJog = false;
+	
+	LastStopJogTime = GetWorld()->GetTimeSeconds();
 }
 
 void UPlayerMovementComponent::ToggleCrouch()
