@@ -36,8 +36,6 @@ UCLASS()
 class OUTBREAKZ_MOBILE_API UPlayerMovementComponent : public UCharacterMovementComponent
 {
 	GENERATED_BODY()
-	
-	typedef UCharacterMovementComponent Super;
 
 	class FSavedMove_CMP : public FSavedMove_Character
 	{
