@@ -4,9 +4,10 @@
 #include "Player/SurvivalCharacter.h"
 
 #include "Camera/CameraComponent.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "ChaosVehicleMovementComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Components/PhysicsSocketComponent.h"
 #include "Player/Components/MantlingSystemComponent.h"
 #include "Player/Components/PlayerMovementComponent.h"
@@ -43,7 +44,13 @@ void ASurvivalCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
+}
+
+void ASurvivalCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if (const APlayerController* PlayerController = Cast<APlayerController>(NewController))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
 			UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
