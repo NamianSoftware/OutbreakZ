@@ -45,6 +45,9 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void BrakeLights(bool IsBraking);
 	
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	float GetSteeringAngle();
+	
 #pragma endregion
 
 #pragma region INPUT
