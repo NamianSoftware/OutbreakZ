@@ -217,6 +217,7 @@ void UPlayerAnimInstance::UpdateCharacterTransform()
 void UPlayerAnimInstance::ResetTransition()
 {
 	bPlayStartAnim = false;
+	bPlayLandAnim = false;
 	bPlayGaitTransitionAnim = false;
 }
 
@@ -478,44 +479,26 @@ void UPlayerAnimInstance::UpdateJumpAnims()
 		break;
 	default: break;
 	}
+
 }
 
 void UPlayerAnimInstance::UpdateLandAnim()
 {
-	DetermineLocomotionState();
-	LandLocomotionState = LocomotionState;
-
-	switch (LandLocomotionState)
+	if(bJumpFootIsRight)
 	{
-	case ELocomotionState::ELS_Idle:
-		LandAnim = IdleLandAnim;
-		AnimStartTime = IdleLandLStartTime;
-		break;
-	case ELocomotionState::ELS_Walk:
-		if (bJumpFootIsRight)
-		{
-			LandAnim = WalkRLandAnim;
-			AnimStartTime = WalkRLandStartTime;
-		}
-		else
-		{
-			LandAnim = WalkLLandAnim;
-			AnimStartTime = WalkLLandStartTime;
-		}
-		break;
-	case ELocomotionState::ELS_Jog:
-		if (bJumpFootIsRight)
-		{
-			LandAnim = JogRLandAnim;
-			AnimStartTime = JogRLandStartTime;
-		}
-		else
-		{
-			LandAnim = JogLLandAnim;
-			AnimStartTime = JogLLandStartTime;
-		}
-		break;
-	default: break;
+		JogLandAnim = JogRLandAnim;
+		JogLandStartTime = JogRLandStartTime;
+		
+		WalkLandAnim = WalkRLandAnim;
+		WalkLandStartTime = WalkRLandStartTime;
+	}
+	else
+	{
+		JogLandAnim = JogLLandAnim;
+		JogLandStartTime = JogLLandStartTime;
+		
+		WalkLandAnim = WalkLLandAnim;
+		WalkLandStartTime = WalkLLandStartTime;
 	}
 }
 
@@ -677,6 +660,11 @@ void UPlayerAnimInstance::WhileFalseCrouch()
 #pragma region ON_GROUND
 void UPlayerAnimInstance::OnEntryGroundState()
 {
+	if(PrevMainState == EMainState::EMS_OnAir)
+	{
+		bPlayLandAnim = true;
+	}
+	
 	ResetLean();
 }
 

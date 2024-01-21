@@ -185,6 +185,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
 	bool bPlayStartAnim;
+	
+	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
+	bool bPlayLandAnim;
 
 	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
 	bool bPlayGaitTransitionAnim;
@@ -239,8 +242,23 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category="AnimationData")
 	UAnimSequence* FallingAnim;
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Animations|Jump|Land")
+	UAnimSequence* IdleLandAnim;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Animations|Jump|Land")
+	float IdleLandStartTime = 0.f;
+	
 	UPROPERTY(BlueprintReadOnly, Category="AnimationData")
-	UAnimSequence* LandAnim;
+	UAnimSequence* JogLandAnim;
+	
+	UPROPERTY(BlueprintReadOnly, Category="AnimationData")
+	float JogLandStartTime = 0.f;
+	
+	UPROPERTY(BlueprintReadOnly, Category="AnimationData")
+	UAnimSequence* WalkLandAnim;
+	
+	UPROPERTY(BlueprintReadOnly, Category="AnimationData")
+	float WalkLandStartTime = 0.f;
 	
 	UPROPERTY(BlueprintReadOnly, Category="AnimationData")
 	UAnimSequence* InAirAnim;
@@ -514,12 +532,6 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Falling")
 	UAnimSequence* JogLFallingAnim;
-	
-	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Land")
-	UAnimSequence* IdleLandAnim;
-	
-	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Land")
-	float IdleLandLStartTime = 0.f;
 	
 	UPROPERTY(EditDefaultsOnly, Category="Animations|Jump|Land")
 	UAnimSequence* WalkRLandAnim;
