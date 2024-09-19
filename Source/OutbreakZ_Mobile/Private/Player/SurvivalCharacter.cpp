@@ -26,11 +26,17 @@ ASurvivalCharacter::ASurvivalCharacter(const FObjectInitializer& ObjectInitializ
 	Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
 	Camera->SetupAttachment(SpringArm, SpringArm->SocketName);
 
+	VisualPart = CreateDefaultSubobject<USceneComponent>("VisualPart");
+	VisualPart->SetupAttachment(GetMesh());
+
+	BodyMesh = CreateDefaultSubobject<USkeletalMeshComponent>("BodyMesh");
+	BodyMesh->SetupAttachment(VisualPart);
+	
 	HeadItemMesh = CreateDefaultSubobject<UStaticMeshComponent>("HeadItemMesh");
-	HeadItemMesh->SetupAttachment(GetMesh(), HeadItemSocket);
+	HeadItemMesh->SetupAttachment(BodyMesh, HeadItemSocket);
 
 	BackpackSocket = CreateDefaultSubobject<UPhysicsSocketComponent>("BackpackSocket");
-	BackpackSocket->Attach(GetMesh(), BackpackSocketName);
+	BackpackSocket->Attach(BodyMesh, BackpackSocketName);
 	
 	BackpackMesh = CreateDefaultSubobject<UStaticMeshComponent>("BackpackMesh");
 	BackpackMesh->SetupAttachment(BackpackSocket->SocketHinge);

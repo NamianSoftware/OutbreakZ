@@ -46,6 +46,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Movement)
 	UPlayerMovementComponent* PlayerMovementComponent;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Meshes)
+	USceneComponent* VisualPart;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Meshes)
+	USkeletalMeshComponent* BodyMesh;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Meshes)
 	UStaticMeshComponent* HeadItemMesh;
