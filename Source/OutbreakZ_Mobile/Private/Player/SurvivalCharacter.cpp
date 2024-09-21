@@ -6,7 +6,6 @@
 #include "Camera/CameraComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "ChaosVehicleMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/PhysicsSocketComponent.h"
 #include "Player/Components/MantlingSystemComponent.h"

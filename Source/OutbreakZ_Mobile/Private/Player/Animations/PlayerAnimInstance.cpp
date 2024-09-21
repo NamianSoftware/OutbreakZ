@@ -60,6 +60,7 @@ void UPlayerAnimInstance::SetEssentialMovementData()
 	GroundSpeed = bIsFalling ? 0.f : Velocity.Size2D();
 
 	DeterminateMainState();
+	UpdateDisplacement();
 }
 
 void UPlayerAnimInstance::DeterminateMainState()
@@ -345,6 +346,13 @@ void UPlayerAnimInstance::UpdateEntryVariables()
 	SecondaryTargetRotation = PrimaryTargetRotation;
 
 	StartAngle = UKismetMathLibrary::NormalizedDeltaRotator(PrimaryTargetRotation, StartRotation).Yaw;
+}
+
+void UPlayerAnimInstance::UpdateDisplacement()
+{
+	const auto PrevWorldLocation = WorldLocation;
+	WorldLocation = PlayerRef->GetActorLocation();
+	DisplacementSinceLastUpdate = (WorldLocation - PrevWorldLocation).Size2D();
 }
 
 void UPlayerAnimInstance::UpdateCrouchTransitionAnim()

@@ -103,6 +103,7 @@ private:
 	void UpdateOnJogEntry();
 	void UpdateOnCrouchEntry();
 	void UpdateEntryVariables();
+	void UpdateDisplacement();
 
 	void UpdateCrouchTransitionAnim();
 	void UpdateWalkTransitionAnim();
@@ -125,6 +126,12 @@ protected:
 	
 	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
 	FVector Velocity;
+
+	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
+	FVector WorldLocation;
+	
+	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
+	float DisplacementSinceLastUpdate;
 
 	UPROPERTY(BlueprintReadOnly, Category="EssentialData")
 	bool bIsFalling;
