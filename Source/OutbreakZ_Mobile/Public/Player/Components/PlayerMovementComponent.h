@@ -69,6 +69,7 @@ class OUTBREAKZ_MOBILE_API UPlayerMovementComponent : public UCharacterMovementC
 	UPROPERTY(EditDefaultsOnly, Category=MovementConfig) FMovementStateConfig JogConfig;
 	UPROPERTY(EditDefaultsOnly, Category=MovementConfig) float JumpDelayTime = 0.25;
 	UPROPERTY(EditDefaultsOnly, Category=MovementConfig) float JogDelayTime = 0.25;
+	UPROPERTY(EditDefaultsOnly, Category=MovementConfig) float AccelerationInterpSpeed = 6.f;
 
 	UPROPERTY() EAppliedMovementState AppliedMovementState = EAppliedMovementState::EAMS_None;
 
@@ -105,6 +106,9 @@ private:
 private:	
 	UPROPERTY()
 	bool bIsOnLadder = false;
+
+	float TargetMaxAcceleration;
+	float TargetBrakingDeceleration;
 	
 private:
 	void ApplyMovementConfig(const FMovementStateConfig& MovementConfig);

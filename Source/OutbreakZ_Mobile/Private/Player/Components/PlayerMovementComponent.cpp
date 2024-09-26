@@ -128,6 +128,16 @@ void UPlayerMovementComponent::OnMovementUpdated(float DeltaSeconds, const FVect
 			ApplyMovementConfig(WalkConfig);
 			AppliedMovementState = EAppliedMovementState::EAMS_Walk;
 		}
+
+		if(Acceleration.Size2D() > 0)
+		{
+			MaxAcceleration = FMath::FInterpTo(
+				MaxAcceleration, TargetMaxAcceleration,
+				DeltaSeconds, AccelerationInterpSpeed);
+			BrakingDecelerationWalking = FMath::FInterpTo(
+				BrakingDecelerationWalking, TargetBrakingDeceleration,
+				DeltaSeconds, AccelerationInterpSpeed);	
+		}
 	}
 }
 
@@ -199,6 +209,6 @@ void UPlayerMovementComponent::UnclimbLadder()
 void UPlayerMovementComponent::ApplyMovementConfig(const FMovementStateConfig& MovementConfig)
 {
 	MaxWalkSpeed = MovementConfig.MaxWalkSpeed;
-	MaxAcceleration = MovementConfig.MaxAcceleration;
-	BrakingDecelerationWalking = MovementConfig.BrakingDeceleration;
+	TargetMaxAcceleration = MovementConfig.MaxAcceleration;
+	TargetBrakingDeceleration = MovementConfig.BrakingDeceleration;
 }
