@@ -36,6 +36,36 @@ void UPlayerAnimInstance::NativePostEvaluateAnimation()
 	ResetTransition();
 }
 
+UAnimSequence* UPlayerAnimInstance::GetPivotAnim(UAnimSequence* Pivot90LAnim, UAnimSequence* Pivot180LAnim,
+                                                 UAnimSequence* Pivot90RAnim, UAnimSequence* Pivot180RAnim)
+{
+	const auto Acceleration = CharacterMovementRef->GetCurrentAcceleration();
+	const auto NormalizedAcceleration = UKismetMathLibrary::Normal(Acceleration);
+	const auto NormalizedVelocity = UKismetMathLibrary::Normal(Velocity);
+
+	float DotProduct = FVector::DotProduct(NormalizedVelocity, NormalizedAcceleration);
+	const auto Cross = UKismetMathLibrary::Cross_VectorVector(NormalizedVelocity, NormalizedAcceleration);
+
+	const auto StartPivotAngle = UKismetMathLibrary::DegAcos(DotProduct);
+	const auto bIsRight = Cross.Z > 0.f;
+
+	if (StartPivotAngle > 90.f)
+	{
+		if (bIsRight)
+		{
+			return Pivot180RAnim;
+		}
+		return Pivot180RAnim;
+	}
+
+	if (bIsRight)
+	{
+		return Pivot90RAnim;
+	}
+
+	return Pivot90LAnim;
+}
+
 void UPlayerAnimInstance::SetReferences()
 {
 	if (const auto NewPlayerRef = Cast<ASurvivalCharacter>(TryGetPawnOwner()))
@@ -61,6 +91,7 @@ void UPlayerAnimInstance::SetEssentialMovementData()
 
 	DeterminateMainState();
 	UpdateDisplacement();
+	UpdatePivot();
 }
 
 void UPlayerAnimInstance::DeterminateMainState()
@@ -141,6 +172,19 @@ void UPlayerAnimInstance::TrackLocomotionStates()
 	                     &UPlayerAnimInstance::WhileFalseCrouch);
 }
 
+void UPlayerAnimInstance::UpdatePivot()
+{
+	const auto Acceleration = CharacterMovementRef->GetCurrentAcceleration();
+	const auto Acceleration2D = Acceleration * FVector(1.f, 1.f, 0.f);
+	const auto Velocity2D = Velocity * FVector(1.f, 1.f, 0.f);
+
+	const auto NormalizedAcceleration2D = UKismetMathLibrary::Normal(Acceleration2D);
+	const auto NormalizedVelocity2D = UKismetMathLibrary::Normal(Velocity2D);
+	const auto DotNormalAccelerationToVelocity = UKismetMathLibrary::Dot_VectorVector(
+		NormalizedAcceleration2D, NormalizedVelocity2D);
+	bInPivot = DotNormalAccelerationToVelocity < 0.f;
+}
+
 void UPlayerAnimInstance::TrackMainStates()
 {
 	TrackMainState(EMainState::EMS_OnGround, EntryFlags_MainState.IsOnGround,
@@ -219,6 +263,7 @@ void UPlayerAnimInstance::ResetTransition()
 {
 	bPlayStartAnim = false;
 	bPlayLandAnim = false;
+	bInPivot = false;
 	bPlayGaitTransitionAnim = false;
 }
 
@@ -408,6 +453,8 @@ void UPlayerAnimInstance::UpdateJogTransitionAnim()
 
 void UPlayerAnimInstance::DetermineGroundLocomotionState()
 {
+	if (IsPivoting()) return;
+
 	const auto NormalizedVelocity = UKismetMathLibrary::Normal(Velocity);
 	const auto NormalizedCurrentAcceleration = UKismetMathLibrary::Normal(
 		CharacterMovementRef->GetCurrentAcceleration());
@@ -487,16 +534,15 @@ void UPlayerAnimInstance::UpdateJumpAnims()
 		break;
 	default: break;
 	}
-
 }
 
 void UPlayerAnimInstance::UpdateLandAnim()
 {
-	if(bJumpFootIsRight)
+	if (bJumpFootIsRight)
 	{
 		JogLandAnim = JogRLandAnim;
 		JogLandStartTime = JogRLandStartTime;
-		
+
 		WalkLandAnim = WalkRLandAnim;
 		WalkLandStartTime = WalkRLandStartTime;
 	}
@@ -504,7 +550,7 @@ void UPlayerAnimInstance::UpdateLandAnim()
 	{
 		JogLandAnim = JogLLandAnim;
 		JogLandStartTime = JogLLandStartTime;
-		
+
 		WalkLandAnim = WalkLLandAnim;
 		WalkLandStartTime = WalkLLandStartTime;
 	}
@@ -552,6 +598,8 @@ void UPlayerAnimInstance::WhileFalseIdle()
 #pragma region WALK
 void UPlayerAnimInstance::OnEntryWalk()
 {
+	if (IsPivoting()) return;
+
 	if (PrevLocomotionState == ELocomotionState::ELS_Idle)
 	{
 		UpdateOnWalkEntry();
@@ -668,11 +716,11 @@ void UPlayerAnimInstance::WhileFalseCrouch()
 #pragma region ON_GROUND
 void UPlayerAnimInstance::OnEntryGroundState()
 {
-	if(PrevMainState == EMainState::EMS_OnAir)
+	if (PrevMainState == EMainState::EMS_OnAir)
 	{
 		bPlayLandAnim = true;
 	}
-	
+
 	ResetLean();
 }
 

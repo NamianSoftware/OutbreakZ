@@ -57,10 +57,17 @@ public:
 
 protected:
 	UFUNCTION(BlueprintImplementableEvent)
-	bool InLocomotionState();
+	bool InLocomotionState() const;
 	
 	UFUNCTION(BlueprintImplementableEvent)
-	bool InLandState();
+	bool InLandState() const;
+	
+	UFUNCTION(BlueprintImplementableEvent)
+	bool InPivotState() const;
+
+	UFUNCTION(BlueprintCallable, meta=(BlueprintThreadSafe), Category="Pivot")
+	UAnimSequence* GetPivotAnim(UAnimSequence* Pivot90LAnim, UAnimSequence* Pivot180LAnim,
+										  UAnimSequence* Pivot90RAnim,  UAnimSequence* Pivot180RAnim);
 
 #pragma region REFERENCES
 
@@ -83,6 +90,7 @@ private:
 	void UpdateAimOffset();
 	void DetermineLocomotionState();
 	void TrackLocomotionStates();
+	void UpdatePivot();
 	
 	void TrackMainStates();
 
@@ -195,6 +203,9 @@ protected:
 	
 	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
 	bool bPlayLandAnim;
+
+	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
+	bool bInPivot;
 
 	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
 	bool bPlayGaitTransitionAnim;
@@ -606,6 +617,10 @@ protected:
 private:
 	OnEntryFlags_LocomotionState EntryFlags_LocomotionState;
 
+private:
+	UFUNCTION(BlueprintPure, Category="Pivot")
+	FORCEINLINE bool IsPivoting() const { return bInPivot || InPivotState(); }
+	
 #pragma region IDLE
 	void OnEntryIdle();
 	void OnExitIdle();
@@ -686,8 +701,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Ladder|Animations|Enter")
 	float LadderEnterBottomStartTime;
 #pragma endregion 
-	
-	
+
 #pragma region HELPERS
 
 private:
